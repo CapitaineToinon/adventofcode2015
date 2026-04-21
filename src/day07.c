@@ -6,7 +6,6 @@
 #include <string.h>
 
 #define LINE_LEN 256
-#define MAX_WIRE_LEN 2
 #define MAX_REGEX_LEN 256
 #define CACHE_SIZE "aaa"
 
@@ -108,7 +107,7 @@ int wire_hash(char *wire) {
  */
 char *extract_match(char *string, regmatch_t match) {
   int length = match.rm_eo - match.rm_so;
-  char *output = malloc(sizeof(char) * length + 1);
+  char *output = malloc(sizeof(char) * (length + 1));
   strncpy(output, string + match.rm_so, length);
   output[length] = '\0';
   return output;
@@ -158,7 +157,6 @@ struct double_params *parse_double_params(struct context *ctx,
 
   if (regexec(&ctx->double_regex, instruction,
               sizeof(matches) / sizeof(regmatch_t), matches, 0) == 0) {
-
     params = malloc(sizeof(struct double_params));
     params->left = extract_match(instruction, matches[1]);
     params->action = extract_match(instruction, matches[2]);
@@ -232,7 +230,7 @@ uint16_t solve(struct context *ctx, char *wire) {
   // Regex used to find the line that assigns the value
   // to the wire we're looking for. By design, there is
   // only one in the file
-  if (sprintf(input, "^(.+) -> %s$", wire) == 0) {
+  if (sprintf(input, "^(.+) -> %s$", wire) < 0) {
     printf("failed to sprintf\n");
     exit(-1);
   }
@@ -260,6 +258,9 @@ uint16_t solve(struct context *ctx, char *wire) {
 
     if ((d_params = parse_double_params(ctx, instruction)) != NULL) {
       result = solve_double(ctx, d_params);
+      free(d_params->left);
+      free(d_params->right);
+      free(d_params->action);
       free(d_params);
     }
 
@@ -279,6 +280,7 @@ uint16_t solve(struct context *ctx, char *wire) {
     }
 
     free(instruction);
+    free(line);
     regfree(&regex);
 
     // cache for memoization
