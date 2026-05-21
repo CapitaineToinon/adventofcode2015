@@ -7,6 +7,7 @@ DAYS=$(basename $(notdir $(wildcard $(IN)/day*.c)))
 SOURCES=$(wildcard $(IN)/*.c)
 
 day04: LDFLAGS=-lcrypto -lm
+day12: LDFLAGS=-ljq
 
 day%: init
 	$(GCC) $(CFLAGS) $(WARNFLAGS) $(IN)/day$*.c -o $(OUT)/day$* $(LDFLAGS)
