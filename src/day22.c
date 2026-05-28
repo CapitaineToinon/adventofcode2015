@@ -22,6 +22,7 @@ typedef struct state {
   int bhealth;
   int bdamage;
   bool turn;
+  int steps;
   effect_t **effects;
 } state_t;
 
@@ -90,6 +91,19 @@ effect_t **copy_effects(effect_t **e) {
   return effects;
 }
 
+state_t *create_state(int phealth, int pmana, int bhealth, int bdamage) {
+  state_t *state = malloc(sizeof(state_t));
+  state->phealth = phealth;
+  state->pmana = pmana;
+  state->bhealth = bhealth;
+  state->bdamage = bdamage;
+  state->used_mana = 0;
+  state->turn = true;
+  state->steps = 0;
+  state->effects = create_effects();
+  return state;
+}
+
 state_t *copy_state(state_t *state) {
   state_t *copy = malloc(sizeof(state_t));
   copy->phealth = state->phealth;
@@ -98,6 +112,7 @@ state_t *copy_state(state_t *state) {
   copy->bhealth = state->bhealth;
   copy->bdamage = state->bdamage;
   copy->turn = state->turn;
+  copy->steps = state->steps;
   copy->effects = copy_effects(state->effects);
   return copy;
 }
@@ -129,50 +144,54 @@ state_t *pop(node_t **q) {
 }
 
 void insert(node_t **q, state_t *b) {
-  if (*q == NULL) {
-    node_t *root = malloc(sizeof(node_t));
-    root->state = b;
-    root->next = NULL;
-    *q = root;
-    return;
+  b->steps++;
+
+  node_t *new_node = malloc(sizeof(node_t));
+  new_node->state = b;
+  new_node->next = NULL;
+
+  while (*q != NULL && (*q)->state->used_mana <= b->used_mana) {
+    q = &(*q)->next;
   }
 
-  state_t *a = (*q)->state;
-
-  if (a->used_mana > b->used_mana ||
-      (a->used_mana == b->used_mana && a->bhealth > b->bhealth)) {
-    node_t *insert = malloc(sizeof(node_t));
-    insert->state = b;
-    insert->next = *q;
-    *q = insert;
-    return;
-  }
-
-  insert(&(*q)->next, b);
+  new_node->next = *q;
+  *q = new_node;
 }
 
-int fight(int phealth, int pmana, int bhealth, int bdamage) {
-  state_t *init = malloc(sizeof(state_t));
-  init->phealth = phealth;
-  init->pmana = pmana;
-  init->used_mana = 0;
-  init->bhealth = bhealth;
-  init->bdamage = bdamage;
-  init->turn = true;
-  init->effects = create_effects();
+int fight(int phealth, int pmana, int bhealth, int bdamage, bool hard) {
+  state_t *initial = create_state(phealth, pmana, bhealth, bdamage);
 
   node_t *q = NULL;
-  insert(&q, init);
+  insert(&q, initial);
+
   int solution = -1;
 
   while (q != NULL && solution == -1) {
     state_t *state = pop(&q);
 
-    printf("%d\n", state->used_mana);
-
     if (state == NULL) {
       // no solution found
       break;
+    }
+
+    if (hard) {
+      // in hard mode, the player loses health
+      // all the time
+      if (state->turn) {
+        state->phealth -= 1;
+      }
+    }
+
+    // Heuristics to exit fights that the player is loosing
+    // if after 8 turns, the player has lost more health than the
+    // boss in proportions, given a 10% delta
+    //
+    // Values found experimentally and may not give the least mana
+    // if too aggresive
+    if (state->steps > 8 && ((state->phealth / (double)phealth) + 0.1 <
+                             state->bhealth / (double)bhealth)) {
+      free_state(state);
+      continue;
     }
 
     if (state->phealth <= 0) {
@@ -182,11 +201,13 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
     }
 
     if (state->bhealth <= 0) {
+      // boss dead, found a solution
       solution = state->used_mana;
       free_state(state);
       break;
     }
 
+    // armor value used in to neglate boss damage
     int armor = 0;
 
     for (int i = 0; i < N_EFFECT; i++) {
@@ -196,14 +217,14 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
         continue;
       }
 
+      // apply passive effects
       state->bhealth -= e->damage;
       state->phealth += e->heal;
       state->pmana += e->mana;
       armor += state->effects[i]->armor;
 
-      e->turns--;
-
-      if (e->turns <= 0) {
+      if (--e->turns <= 0) {
+        // spell ran out
         free(e);
         state->effects[i] = NULL;
       }
@@ -216,6 +237,7 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
     }
 
     if (state->turn) {
+      // Player turn, try using all possible spells
       for (int i = 0; i < N_EFFECT; i++) {
         if (state->effects[i] != NULL) {
           // spell already casted
@@ -234,12 +256,13 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
         state_t *next = copy_state(state);
 
         if (e->turns == 0) {
-          // spell runs immiediately
+          // some spell run immiediately
+          // so apply effect now instead of later
           next->bhealth -= e->damage;
           next->phealth += e->heal;
           next->pmana += e->mana;
         } else {
-          // spell is caster for later
+          // spell is casted for later
           next->effects[i] = copy_effect(e);
         }
 
@@ -248,6 +271,8 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
         next->used_mana += cost;
 
         if (next->bhealth <= 0) {
+          // Boss died from a spell we applied
+          // immiediately, solution found
           solution = next->used_mana;
           free_state(next);
           break;
@@ -255,13 +280,12 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
 
         // change the turn
         next->turn = false;
-
         insert(&q, next);
       }
 
       free_state(state);
     } else {
-      // Boss turn
+      // Boss turn, just apply damage
       state->phealth -= max(1, state->bdamage - armor);
       state->turn = true;
       insert(&q, state);
@@ -274,12 +298,13 @@ int fight(int phealth, int pmana, int bhealth, int bdamage) {
 }
 
 int main() {
-  effect_t **effects = create_effects();
+  int phealth = 50, pmana = 500, bhealth = 55, bdamage = 8;
 
-  int part_1 = fight(50, 500, 55, 8);
+  int part_1 = fight(phealth, pmana, bhealth, bdamage, false);
   printf("%d\n", part_1);
 
-  free_effects(effects);
+  int part_2 = fight(phealth, pmana, bhealth, bdamage, true);
+  printf("%d\n", part_2);
 
   return 0;
 }
