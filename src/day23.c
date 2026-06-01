@@ -83,10 +83,6 @@ int regmatch_to_register(char *line, regmatch_t *m,
   exit(-1);
 }
 
-const char *RAW_NAMES[N_INSTRUCTIONS] = {
-    "HALF", "TRIPLE", "INCREMENT", "JUMP", "JUMP_EVEN", "JUMP_ONE",
-};
-
 const raw_instruction_t RAW_INSTRUCTIONS[N_INSTRUCTIONS] = {
     {
         "^hlf ([a-z])\n$",
@@ -299,6 +295,7 @@ int main() {
     add_instuction(state, match_line(line, regexes));
   }
 
+  free_regex_instructions(regexes);
   fclose(file);
 
   execute(state);
@@ -311,7 +308,6 @@ int main() {
   int part_2 = state->registers[1];
 
   free_state(state);
-  free_regex_instructions(regexes);
 
   printf("%d\n", part_1);
   printf("%d\n", part_2);
