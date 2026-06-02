@@ -1,20 +1,43 @@
-#include <jq.h>
-#include <jv.h>
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#define MAX 30000
+char *get_input(const char *filename, int *out) {
+  FILE *file = fopen(filename, "r");
 
-regex_t regex;
+  if (file == NULL) {
+    printf("failed to open the file\n");
+    exit(EXIT_FAILURE);
+  }
 
-int solve(char *line, int len);
+  struct stat sb;
 
-int old() {
-  char *line = malloc(sizeof(char) * MAX);
-  FILE *file = fopen("./input/day12", "r");
+  if (stat(filename, &sb) != 0) {
+    printf("failed to open the file\n");
+    exit(EXIT_FAILURE);
+  }
+
+  int size = sb.st_size;
+  char *json = malloc(sizeof(char) * (size + 1));
+  int read = fread(json, sizeof(char), size, file);
+
+  if (read != size) {
+    printf("failed to read file, size mismatch\n");
+    exit(EXIT_FAILURE);
+  }
+
+  fclose(file);
+
+  json[size] = '\0';
+  *out = size;
+
+  return json;
+}
+
+int part_1(char *input) {
+  regex_t regex;
 
   if (regcomp(&regex, "([0-9]+|-[0-9]+)", REG_EXTENDED) != 0) {
     printf("failed to compile regex\n");
@@ -24,80 +47,108 @@ int old() {
   regmatch_t matches[2];
   int result = 0;
 
-  while (fgets(line, MAX, file)) {
-    while (regexec(&regex, line, 2, matches, 0) == 0) {
-
-      int number = atoi(line + matches[1].rm_so);
-      result += number;
-      printf("%d\n", number);
-
-      line = line + matches[1].rm_eo;
-    }
+  while (regexec(&regex, input, 2, matches, 0) == 0) {
+    result += atoi(input + matches[1].rm_so);
+    input += matches[1].rm_eo;
   }
 
-  printf("%d\n", result);
+  regfree(&regex);
 
-  return 0;
+  return result;
 }
 
-int handle_object(char *line, int len) {
-  bool valid = true;
-  int end;
+int find_start(char *cur, int i) {
+  int depth = 0;
 
-  for (end = 1;; end++) {
-    if (strncmp(line + end, ":\"red\"", 6) == 0) {
-      valid = false;
+  while (i > 0) {
+    if (cur[i] == '}') {
+      depth++;
+    } else if (cur[i] == '{') {
+      if (depth == 0) {
+        return i;
+      }
+      depth--;
     }
-    if (line[end] == '{') {
-      handle_object(line + end, len);
-    }
-    if (line[end] == '}') {
-      break;
-    }
+
+    i--;
   }
 
-  // printf("object found: %.*s and is %s\n", end + 1, line,
-  //        valid ? "valid" : "invalid");
-
-  if (!valid) {
-    // printf("removing :%.*s\n", end - 1, line + 1);
-    strncpy(line, line + end + 1, MAX);
-    return solve(line, len - end + 1);
-  } else {
-    return solve(line + end + 1, len - end);
-  }
+  printf("failed to find the start of the object\n");
+  exit(EXIT_FAILURE);
 }
 
-int solve(char *line, int len) {
-  int i = 0;
+int find_end(char *cur, int i) {
+  int depth = 0;
 
-  while (i <= len) {
-    // printf("i: %d len %d\n", i, len);
-
-    if (line[i] == '{') {
-      // printf("found object at %d -> %s\n", i, line + i);
-      len = handle_object(line + i, len);
+  while (cur[i] != '\0') {
+    if (cur[i] == '{') {
+      depth++;
+    } else if (cur[i] == '}') {
+      if (depth == 0) {
+        return i + 1;
+      }
+      depth--;
     }
 
     i++;
   }
+
+  printf("failed to find the end of the object\n");
+  exit(EXIT_FAILURE);
+}
+
+int part_2(char *input, int len) {
+  regex_t regex;
+  int rc;
+
+  if ((rc = regcomp(&regex, "\"[a-z]+\":\"red\"", REG_EXTENDED)) != 0) {
+    char buffer[100];
+    regerror(rc, &regex, buffer, 100);
+    printf("regcomp() failed with '%s'\n", buffer);
+    exit(1);
+  }
+
+  regmatch_t matches[1];
+
+  char *cur = malloc(sizeof(char) * (len + 1));
+  memcpy(cur, input, len);
+  cur[len] = '\0';
+
+  char *next = malloc(sizeof(char) * (len + 1));
+
+  while (regexec(&regex, cur, 1, matches, 0) == 0) {
+    int start = find_start(cur, matches[0].rm_so);
+    int end = find_end(cur, matches[0].rm_eo);
+    int segment_len = end - start;
+
+    memcpy(next, cur, start);
+    memcpy(next + start + 1, cur + end, len - end);
+    len -= (segment_len - 1);
+    next[start] = '0'; // replace the object by a zero
+    next[len] = '\0';
+
+    // swap the buffers
+    char *tmp = cur;
+    cur = next;
+    next = tmp;
+  }
+
+  int result = part_1(cur);
+
+  free(cur);
+  free(next);
+  regfree(&regex);
+
+  return result;
 }
 
 int main() {
-  char filename[] = "./input/day12";
+  int len;
+  char *json = get_input("./input/day12", &len);
 
-  char *content = malloc(sizeof(char) * MAX);
-  FILE *file = fopen(filename, "r");
+  printf("%d\n", part_1(json));
+  printf("%d\n", part_2(json, len));
 
-  if (fread(content, sizeof(char), MAX, file) == 0) {
-    perror("fread");
-    exit(EXIT_FAILURE);
-  }
-
-  printf("%s\n", content);
-  int len = strnlen(content, MAX);
-  int new_len = solve(content, len);
-  printf("%s\n", content);
-
+  free(json);
   return 0;
 }
