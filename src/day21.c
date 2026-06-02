@@ -1,3 +1,4 @@
+#include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,8 +41,6 @@ typedef struct player {
   int armor;
   int cost;
 } player_t;
-
-int max(int a, int b) { return a > b ? a : b; }
 
 int divide_ceil(int a, int b) {
   int result = a / b;
@@ -157,8 +156,8 @@ void free_players(player_t **players, int size) {
 }
 
 bool fight(player_t *p, player_t *b) {
-  int boss_hits = divide_ceil(p->health, max(1, b->damage - p->armor));
-  int player_hits = divide_ceil(b->health, max(1, p->damage - b->armor));
+  int boss_hits = divide_ceil(p->health, max2(1, b->damage - p->armor));
+  int player_hits = divide_ceil(b->health, max2(1, p->damage - b->armor));
 
   return player_hits <= boss_hits;
 }

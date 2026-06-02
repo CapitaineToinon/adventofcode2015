@@ -1,23 +1,10 @@
+#include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int min(int a, int b, int c) {
-  int min = a;
-
-  if (b < min) {
-    min = b;
-  }
-
-  if (c < min) {
-    min = c;
-  }
-
-  return min;
-}
-
 int main() {
-  FILE *file = fopen("./input/day02", "r");
+  FILE *file = fopen_orexit("./input/day02");
 
   int paper = 0;
   int ribbon = 0;
@@ -34,8 +21,8 @@ int main() {
     int volume = l * w * h;
 
     paper += 2 * area_a + 2 * area_b + 2 * area_c;
-    paper += min(area_a, area_b, area_c);
-    ribbon += min(peri_a, peri_b, peri_c);
+    paper += min3(area_a, area_b, area_c);
+    ribbon += min3(peri_a, peri_b, peri_c);
     ribbon += volume;
   }
 

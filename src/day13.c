@@ -1,3 +1,4 @@
+#include "common.h"
 #include <limits.h>
 #include <regex.h>
 #include <stdio.h>
@@ -15,9 +16,8 @@ typedef struct {
   int constraints[MAX_PEOPLE][MAX_PEOPLE];
 } context_t;
 
-context_t *create() {
-  context_t *c = malloc(sizeof(context_t));
-  c->count = 0;
+context_t *create_context() {
+  context_t *c = calloc(1, sizeof(context_t));
   return c;
 }
 
@@ -41,8 +41,6 @@ int add_person_from_match(context_t *c, char *line, regmatch_t m) {
 void add_constraint(context_t *c, int a, int b, int quantity) {
   c->constraints[a][b] = quantity;
 }
-
-int max(int a, int b) { return a > b ? a : b; }
 
 void swap(int *seats, int a, int b) {
   int tmp = seats[a];
@@ -76,7 +74,7 @@ int permutations(context_t *c, int *seats, int k, int solution) {
   int next = solution;
 
   for (int i = 0; i < k; i++) {
-    next = max(permutations(c, seats, k - 1, next), next);
+    next = max2(permutations(c, seats, k - 1, next), next);
 
     if (i < k - 1) {
       if (k % 2 == 0) {
@@ -97,50 +95,52 @@ int solve(context_t *c) {
     seats[i] = i;
   }
 
-  return permutations(c, seats, c->count, INT_MIN);
+  int answer = permutations(c, seats, c->count, INT_MIN);
+
+  free(seats);
+
+  return answer;
 }
 
 int main() {
-  FILE *file = fopen("./input/day13", "r");
+  FILE *file = fopen_orexit("./input/day13");
   char line[LINE_LEN];
 
-  context_t *c = create();
+  context_t *ctx = create_context();
   regex_t regex;
 
-  if (regcomp(&regex,
-              "([a-zA-Z]+) would (gain|lose) ([0-9]+) happiness units by "
-              "sitting next to ([a-zA-Z]+)\\.",
-              REG_EXTENDED) != 0) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(&regex,
+                 "([a-zA-Z]+) would (gain|lose) ([0-9]+) happiness units by "
+                 "sitting next to ([a-zA-Z]+)\\.",
+                 REG_EXTENDED);
 
   regmatch_t matches[GROUP_LEN];
 
   while (fgets(line, LINE_LEN, file)) {
     if (regexec(&regex, line, GROUP_LEN, matches, 0) != 0) {
       printf("invalid line\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
-    int a = add_person_from_match(c, line, matches[1]);
-    int b = add_person_from_match(c, line, matches[4]);
+    int a = add_person_from_match(ctx, line, matches[1]);
+    int b = add_person_from_match(ctx, line, matches[4]);
     int quantity = atoi(line + matches[3].rm_so);
 
     if (strncmp(line + matches[2].rm_so, "lose", 4) == 0) {
       quantity = -quantity;
     }
 
-    add_constraint(c, a, b, quantity);
+    add_constraint(ctx, a, b, quantity);
   }
 
   fclose(file);
+  regfree(&regex);
 
-  printf("%d\n", solve(c));
-  add_person(c, "Me", 2);
-  printf("%d\n", solve(c));
+  printf("%d\n", solve(ctx));
+  add_person(ctx, "Me", 2);
+  printf("%d\n", solve(ctx));
 
-  free(c);
+  free(ctx);
 
   return 0;
 }

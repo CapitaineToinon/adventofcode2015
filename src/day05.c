@@ -1,3 +1,4 @@
+#include "common.h"
 #include <stdio.h>
 
 #define VOWELS_COUNT 3
@@ -35,7 +36,7 @@ bool is_very_nice(char *s) {
   bool has_pair = false;
   bool has_repeat = false;
 
-  while (s[i] != '\n') {
+  while (s[i + 2] != '\n') {
     if (!has_pair) {
       int j = i + 2;
 
@@ -64,7 +65,7 @@ bool is_very_nice(char *s) {
 }
 
 int main() {
-  FILE *file = fopen("./input/day05", "r");
+  FILE *file = fopen_orexit("./input/day05");
   char line[256];
   int nice = 0;
   int very_nice = 0;

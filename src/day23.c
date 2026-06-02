@@ -1,3 +1,4 @@
+#include "common.h"
 #include <regex.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -54,7 +55,7 @@ char regmatch_to_char(char *line, regmatch_t *m) {
 
   if (len != 1) {
     printf("Expected to match a single char, matched more\n");
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   char output = s[0];
@@ -80,7 +81,7 @@ int regmatch_to_register(char *line, regmatch_t *m,
   }
 
   printf("Register %c does not exist\n", reg);
-  exit(-1);
+  exit(EXIT_FAILURE);
 }
 
 const raw_instruction_t RAW_INSTRUCTIONS[N_INSTRUCTIONS] = {
@@ -195,11 +196,8 @@ compile_raw_instructions(const raw_instruction_t raw[N_INSTRUCTIONS]) {
     compiled[i] = malloc(sizeof(regex_instruction_t));
     compiled[i]->type = i;
 
-    if (regcomp(&compiled[i]->regex, raw[i].input,
-                REG_NEWLINE | REG_EXTENDED) != 0) {
-      printf("failed to compile regex %d\n", i);
-      exit(-1);
-    }
+    regcomp_orexit(&compiled[i]->regex, raw[i].input,
+                   REG_NEWLINE | REG_EXTENDED);
 
     compiled[i]->matches = malloc(sizeof(regmatch_t) * raw[i].n_groups);
     compiled[i]->n_groups = raw[i].n_groups;
@@ -232,7 +230,7 @@ instruction_t *match_line(char *line, regex_instruction_t **regexes) {
   }
 
   printf("invalid instruction %s", line);
-  exit(-1);
+  exit(EXIT_FAILURE);
 }
 
 state_t *create_state() {
@@ -285,7 +283,7 @@ void add_instuction(state_t *s, instruction_t *i) {
 }
 
 int main() {
-  FILE *file = fopen("./input/day23", "r");
+  FILE *file = fopen_orexit("./input/day23");
   char line[MAX_LINE];
 
   regex_instruction_t **regexes = compile_raw_instructions(RAW_INSTRUCTIONS);

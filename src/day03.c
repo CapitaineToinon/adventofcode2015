@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "common.h"
 #include <stdlib.h>
 
 #define WIDTH 1000
@@ -34,7 +34,7 @@ void update_houses(bool *map, int x, int y, int *total) {
 }
 
 int main() {
-  FILE *file = fopen("./input/day03", "r");
+  FILE *file = fopen_orexit("./input/day03");
   bool *p1_map = create_map();
   bool *p2_map = create_map();
 
@@ -89,5 +89,6 @@ int main() {
   free(p1_map);
   free(p2_map);
   fclose(file);
+
   return 0;
 }

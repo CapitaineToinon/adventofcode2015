@@ -1,7 +1,7 @@
-#include <stdio.h>
+#include "common.h"
 
 int main() {
-  FILE *file = fopen("./input/day01", "r");
+  FILE *file = fopen_orexit("./input/day01");
 
   char ch;
   int step = -1;

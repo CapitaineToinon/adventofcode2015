@@ -45,6 +45,7 @@ int main() {
   }
 
   free(data);
+  free(ctx);
   OPENSSL_free(digest);
 
   return 0;

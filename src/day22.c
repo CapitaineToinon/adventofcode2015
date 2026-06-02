@@ -1,3 +1,4 @@
+#include "common.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +43,6 @@ effect_t EFFECTS[N_EFFECT] = {
 char *EFFECT_NAMES[N_EFFECT] = {
     "Magic Missile", "Drain", "Shield", "Poison", "Recharge",
 };
-
-int min(int a, int b) { return a < b ? a : b; }
-int max(int a, int b) { return a > b ? a : b; }
 
 effect_t **create_effects() {
   effect_t **effects = malloc(sizeof(effect_t *) * N_EFFECT);
@@ -286,7 +284,7 @@ int fight(int phealth, int pmana, int bhealth, int bdamage, bool hard) {
       free_state(state);
     } else {
       // Boss turn, just apply damage
-      state->phealth -= max(1, state->bdamage - armor);
+      state->phealth -= max2(1, state->bdamage - armor);
       state->turn = true;
       insert(&q, state);
     }

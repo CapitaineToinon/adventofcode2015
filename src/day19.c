@@ -1,3 +1,4 @@
+#include "common.h"
 #include <regex.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,9 +14,6 @@
 // Note, all strings in these structs
 // are not null terminalted, hence the <name>_len
 // fields.
-
-int min(int a, int b) { return a < b ? a : b; }
-int max(int a, int b) { return a > b ? a : b; }
 
 typedef struct rule {
   char *from;
@@ -116,21 +114,14 @@ char *regmatch_to_string(char *line, regmatch_t *m, int *output_len) {
 }
 
 context_t *get_context() {
-  FILE *file = fopen("./input/day19", "r");
+  FILE *file = fopen_orexit("./input/day19");
 
   char line[MAX_LINE];
   regex_t input_reg;
   regex_t rules_reg;
 
-  if (regcomp(&input_reg, "^([a-zA-Z]+)\n$", REG_EXTENDED)) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
-
-  if (regcomp(&rules_reg, "^([a-zA-Z]+) => ([a-zA-Z]+)\n$", REG_EXTENDED)) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(&input_reg, "^([a-zA-Z]+)\n$", REG_EXTENDED);
+  regcomp_orexit(&rules_reg, "^([a-zA-Z]+) => ([a-zA-Z]+)\n$", REG_EXTENDED);
 
   context_t *ctx = malloc(sizeof(context_t));
   ctx->rules = NULL;

@@ -1,3 +1,4 @@
+#include "common.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +43,7 @@ void solve(int *containers, int size, int i, int used_container_count,
 }
 
 int main() {
-  FILE *file = fopen("./input/day17", "r");
+  FILE *file = fopen_orexit("./input/day17");
 
   char line[MAX_LINE];
   int size = 0;
@@ -51,7 +52,7 @@ int main() {
   while (fgets(line, MAX_LINE, file)) {
     if (size > MAX_CONTAINERS) {
       printf("max container count reached\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     containers[size++] = atoi(line);

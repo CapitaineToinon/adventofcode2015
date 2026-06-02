@@ -1,48 +1,14 @@
+#include "common.h"
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
-char *get_input(const char *filename, int *out) {
-  FILE *file = fopen(filename, "r");
-
-  if (file == NULL) {
-    printf("failed to open the file\n");
-    exit(EXIT_FAILURE);
-  }
-
-  struct stat sb;
-
-  if (stat(filename, &sb) != 0) {
-    printf("failed to open the file\n");
-    exit(EXIT_FAILURE);
-  }
-
-  int size = sb.st_size;
-  char *json = malloc(sizeof(char) * (size + 1));
-  int read = fread(json, sizeof(char), size, file);
-
-  if (read != size) {
-    printf("failed to read file, size mismatch\n");
-    exit(EXIT_FAILURE);
-  }
-
-  fclose(file);
-
-  json[size] = '\0';
-  *out = size;
-
-  return json;
-}
-
 int part_1(char *input) {
   regex_t regex;
 
-  if (regcomp(&regex, "([0-9]+|-[0-9]+)", REG_EXTENDED) != 0) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(&regex, "([0-9]+|-[0-9]+)", REG_EXTENDED);
 
   regmatch_t matches[2];
   int result = 0;
@@ -99,14 +65,8 @@ int find_end(char *cur, int i) {
 
 int part_2(char *input, int len) {
   regex_t regex;
-  int rc;
 
-  if ((rc = regcomp(&regex, "\"[a-z]+\":\"red\"", REG_EXTENDED)) != 0) {
-    char buffer[100];
-    regerror(rc, &regex, buffer, 100);
-    printf("regcomp() failed with '%s'\n", buffer);
-    exit(1);
-  }
+  regcomp_orexit(&regex, "\"[a-z]+\":\"red\"", REG_EXTENDED);
 
   regmatch_t matches[1];
 
@@ -144,7 +104,7 @@ int part_2(char *input, int len) {
 
 int main() {
   int len;
-  char *json = get_input("./input/day12", &len);
+  char *json = fopen_string_orexit("./input/day12", &len);
 
   printf("%d\n", part_1(json));
   printf("%d\n", part_2(json, len));

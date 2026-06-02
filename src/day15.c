@@ -1,3 +1,4 @@
+#include "common.h"
 #include <limits.h>
 #include <regex.h>
 #include <stdio.h>
@@ -9,8 +10,6 @@
 #define PROPERTIES_LEN 5
 #define CALORIES_INDEX 4
 #define INGREDIENTS_TOTAL 100
-
-int max(int a, int b) { return a > b ? a : b; }
 
 int score(int **ingredients, int *values, int len, int calories_target) {
   if (calories_target != -1) {
@@ -54,7 +53,7 @@ int solve(int **ingredients, int *values, int len, int i, int target, int best,
           int calories_target) {
   if (i == len - 1) {
     values[i] = target;
-    return max(score(ingredients, values, len, calories_target), best);
+    return max2(score(ingredients, values, len, calories_target), best);
   }
 
   int local = best;
@@ -72,16 +71,14 @@ int main() {
   regex_t regex;
   regmatch_t matches[GROUPS_LEN];
 
-  if (regcomp(&regex,
-              "[a-zA-Z]+: capacity (-?[0-9]+), durability (-?[0-9]+), flavor "
-              "(-?[0-9]+), texture (-?[0-9]+), "
-              "calories (-?[0-9]+)",
-              REG_EXTENDED) != 0) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(
+      &regex,
+      "[a-zA-Z]+: capacity (-?[0-9]+), durability (-?[0-9]+), flavor "
+      "(-?[0-9]+), texture (-?[0-9]+), "
+      "calories (-?[0-9]+)",
+      REG_EXTENDED);
 
-  FILE *file = fopen("./input/day15", "r");
+  FILE *file = fopen_orexit("./input/day15");
   char line[LINE_LEN];
   int len = 0;
   int **ingredients = malloc(sizeof(int *) * INGREDIENTS_LEN);
@@ -89,12 +86,12 @@ int main() {
   while (fgets(line, LINE_LEN, file)) {
     if (regexec(&regex, line, GROUPS_LEN, matches, 0) != 0) {
       printf("invalid line\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     if (len == INGREDIENTS_LEN) {
       printf("max ingredients count reached\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     ingredients[len] = malloc(sizeof(int) * PROPERTIES_LEN);
@@ -107,6 +104,7 @@ int main() {
   }
 
   fclose(file);
+  regfree(&regex);
 
   int *values = malloc(sizeof(int) * len);
   int calories_target = -1, best = 0, start = 0;

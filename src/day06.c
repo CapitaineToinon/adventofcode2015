@@ -1,3 +1,4 @@
+#include "common.h"
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,37 +33,32 @@ int get_mode(regmatch_t match, char *line) {
 
 int mtoi(regmatch_t match, char *line) { return atoi(line + match.rm_so); }
 
-int max(int a, int b) { return a > b ? a : b; }
-
 int main() {
   bool p1_lights[WIDTH * HEIGHT] = {false};
   int p2_lights[WIDTH * HEIGHT] = {0};
 
-  FILE *file = fopen("./input/day06", "r");
+  FILE *file = fopen_orexit("./input/day06");
   char line[256];
 
   regex_t regex;
   regmatch_t matches[MATCHES_LEN];
 
-  if (regcomp(&regex,
-              "(turn on|turn off|toggle) ([0-9]+),([0-9]+) through "
-              "([0-9]+),([0-9]+)",
-              REG_EXTENDED) != 0) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(&regex,
+                 "(turn on|turn off|toggle) ([0-9]+),([0-9]+) through "
+                 "([0-9]+),([0-9]+)",
+                 REG_EXTENDED);
 
   while (fgets(line, sizeof(line), file)) {
     if (regexec(&regex, line, MATCHES_LEN, matches, 0) != 0) {
       printf("failed to execute regex\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     int mode = -1;
 
     if ((mode = get_mode(matches[1], line)) == -1) {
       printf("failed to parse mode\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     int from_x = mtoi(matches[2], line);
@@ -79,7 +75,7 @@ int main() {
 
         if (mode == TURN_OFF) {
           p1_lights[y * WIDTH + x] = false;
-          p2_lights[y * WIDTH + x] = max(p2_lights[y * WIDTH + x] - 1, 0);
+          p2_lights[y * WIDTH + x] = max2(p2_lights[y * WIDTH + x] - 1, 0);
         }
 
         if (mode == TOGGLE) {
@@ -89,6 +85,8 @@ int main() {
       }
     }
   };
+
+  regfree(&regex);
 
   int p1_total = 0;
   int p2_total = 0;

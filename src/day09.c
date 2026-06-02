@@ -1,3 +1,4 @@
+#include "common.h"
 #include <limits.h>
 #include <regex.h>
 #include <stdint.h>
@@ -13,14 +14,11 @@
 typedef struct {
   int count;
   char names[MAX_CITIES][MAX_CITY_NAME];
-  int edges[(MAX_CITIES * (MAX_CITIES - 1)) / 2];
+  int edges[MAX_CITIES * MAX_CITIES];
 } ctx_t;
 
 regex_t regex;
 ctx_t context;
-
-int min(int a, int b) { return a < b ? a : b; }
-int max(int a, int b) { return a > b ? a : b; }
 
 int add_city(ctx_t *ctx, char *city, int city_len) {
   for (int i = 0; i < ctx->count; i++) {
@@ -31,7 +29,7 @@ int add_city(ctx_t *ctx, char *city, int city_len) {
 
   if (ctx->count == MAX_CITIES) {
     printf("Reached maximum amount of cities allowed of %d\n", MAX_CITIES);
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   strncpy(ctx->names[ctx->count++], city, city_len);
@@ -84,21 +82,18 @@ int solve_all(ctx_t *ctx, int (*cmp)(int, int), int default_result) {
 }
 
 int main() {
-  FILE *file = fopen("./input/day09", "r");
-  char line[256];
+  FILE *file = fopen_orexit("./input/day09");
+  char line[LINE_LEN];
 
-  if (regcomp(&regex, "([a-zA-Z]+) to ([a-zA-Z]+) = ([0-9]+)",
-              REG_NEWLINE | REG_EXTENDED) != 0) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(&regex, "([a-zA-Z]+) to ([a-zA-Z]+) = ([0-9]+)",
+                 REG_NEWLINE | REG_EXTENDED);
 
   regmatch_t matches[LINE_ITEM_COUNT];
 
   while (fgets(line, LINE_LEN, file)) {
     if (regexec(&regex, line, LINE_ITEM_COUNT, matches, 0) != 0) {
       printf("line is invalid: %s\n", line);
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     int from = add_city_from_match(&context, line, matches[1]);
@@ -109,8 +104,8 @@ int main() {
 
   fclose(file);
 
-  printf("%d\n", solve_all(&context, &min, INT_MAX));
-  printf("%d\n", solve_all(&context, &max, 0));
+  printf("%d\n", solve_all(&context, &min2, INT_MAX));
+  printf("%d\n", solve_all(&context, &max2, 0));
 
   return 0;
 }

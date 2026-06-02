@@ -1,3 +1,4 @@
+#include "common.h"
 #include <regex.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -43,16 +44,13 @@ int *create_cache() {
 }
 
 void regex_compile(regex_t *regex, char *input) {
-  if (regcomp(regex, input, REG_EXTENDED | REG_NEWLINE) != 0) {
-    printf("failed to compile regex\n");
-    exit(-1);
-  }
+  regcomp_orexit(regex, input, REG_EXTENDED | REG_NEWLINE);
 }
 
 struct context *create_context() {
   struct context *ctx = malloc(sizeof(struct context));
 
-  ctx->file = fopen("./input/day07", "r");
+  ctx->file = fopen_orexit("./input/day07");
   ctx->cache = create_cache();
   regex_compile(&ctx->double_regex, "(.+) (AND|OR|RSHIFT|LSHIFT) (.+)");
   regex_compile(&ctx->not_regex, "^NOT (.+)$");
@@ -192,7 +190,7 @@ uint16_t solve_double(struct context *ctx, struct double_params *params) {
   }
 
   printf("unknown action: %s\n", params->action);
-  exit(-1);
+  exit(EXIT_FAILURE);
 }
 
 /**
@@ -232,7 +230,7 @@ uint16_t solve(struct context *ctx, char *wire) {
   // only one in the file
   if (sprintf(input, "^(.+) -> %s$", wire) < 0) {
     printf("failed to sprintf\n");
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   regex_t regex;
@@ -276,7 +274,7 @@ uint16_t solve(struct context *ctx, char *wire) {
 
     else {
       printf("found instruction but failed to parsed it: %s\n", instruction);
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
     free(instruction);
@@ -289,7 +287,7 @@ uint16_t solve(struct context *ctx, char *wire) {
   }
 
   printf("failed to process wire %s\n", wire);
-  exit(-1);
+  exit(EXIT_FAILURE);
 }
 
 int main() {

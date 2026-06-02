@@ -1,3 +1,4 @@
+#include "common.h"
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -78,14 +79,14 @@ result_t *create_group(int *packages, uint64_t global_state, uint64_t state,
 uint64_t solve(int *packages, int n, int n_groups) {
   if (n > MAX_PACKAGES) {
     printf("cannot have more than %d packages\n", MAX_PACKAGES);
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   int total = sum(packages, n);
 
   if (total % n_groups != 0) {
     printf("impossible to divide packages in %d\n", n_groups);
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   int target = total / n_groups;
@@ -109,7 +110,7 @@ uint64_t solve(int *packages, int n, int n_groups) {
 }
 
 int main() {
-  FILE *file = fopen("./input/day24", "r");
+  FILE *file = fopen_orexit("./input/day24");
   char line[MAX_LINE];
 
   int *packages = malloc(sizeof(int) * MAX_PACKAGES);

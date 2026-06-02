@@ -1,3 +1,4 @@
+#include "common.h"
 #include <stdio.h>
 
 #define LINE_LEN 256
@@ -77,7 +78,7 @@ int encode(char *l) {
 int main() {
   char line[LINE_LEN];
 
-  FILE *file = fopen("./input/day08", "r");
+  FILE *file = fopen_orexit("./input/day08");
   int part_1 = 0;
   int part_2 = 0;
 

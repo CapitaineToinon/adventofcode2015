@@ -1,3 +1,4 @@
+#include "common.h"
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,16 +94,13 @@ int main() {
 
     if (snprintf(pattern, MAX_LINE, "%s: ([0-9]+)", COMPOUND_NAMES[i]) < 0) {
       printf("failed to create pattern\n");
-      exit(-1);
+      exit(EXIT_FAILURE);
     }
 
-    if (regcomp(&regexes[i], pattern, REG_EXTENDED) != 0) {
-      printf("failed to compile regex\n");
-      exit(-1);
-    }
+    regcomp_orexit(&regexes[i], pattern, REG_EXTENDED);
   }
 
-  FILE *file = fopen("./input/day16", "r");
+  FILE *file = fopen_orexit("./input/day16");
   char line[MAX_LINE];
 
   solution_t p1;
@@ -142,6 +140,10 @@ int main() {
   }
 
   fclose(file);
+
+  for (int i = 0; i < N_COMPOUNDS; i++) {
+    regfree(&regexes[i]);
+  }
 
   printf("%d\n", p1.sue);
   printf("%d\n", p2.sue);

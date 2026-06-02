@@ -1,3 +1,4 @@
+#include "common.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -75,7 +76,7 @@ int solve(char grid[SIZE][SIZE], int steps, bool force_corners) {
 
 int main() {
   char grid[SIZE][SIZE];
-  FILE *file = fopen("./input/day18", "r");
+  FILE *file = fopen_orexit("./input/day18");
 
   for (int y = 0; y < SIZE; y++) {
     char line[LINE_SIZE];
