@@ -1,7 +1,5 @@
 #include "common.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 int main() {
   FILE *file = fopen_orexit("./input/day02");
@@ -10,11 +8,9 @@ int main() {
   int ribbon = 0;
   char line[256];
 
-  while (fgets(line, sizeof(line), file)) {
-    int l = atoi(strtok(line, "x"));
-    int w = atoi(strtok(NULL, "x"));
-    int h = atoi(strtok(NULL, "x"));
+  int l, w, h;
 
+  while (fscanf(file, "%dx%dx%d\n", &l, &w, &h) != EOF) {
     int area_a = l * w, peri_a = 2 * l + 2 * w;
     int area_b = w * h, peri_b = 2 * w + 2 * h;
     int area_c = h * l, peri_c = 2 * h + 2 * l;
