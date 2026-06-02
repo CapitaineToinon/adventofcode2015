@@ -6,8 +6,6 @@ int main() {
 
   int paper = 0;
   int ribbon = 0;
-  char line[256];
-
   int l, w, h;
 
   while (fscanf(file, "%dx%dx%d\n", &l, &w, &h) != EOF) {
